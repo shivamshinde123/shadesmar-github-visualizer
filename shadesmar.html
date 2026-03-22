@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shadesmar — GitHub Visualizer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ========== RESET & BASE ========== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #050508;
+      color: #c0c8d8;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    canvas { display: block; }
+
+    /* ========== INPUT SCREEN ========== */
+    #input-screen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 80%, #0a0c14 0%, #030305 70%);
+      z-index: 200;
+      transition: opacity 0.6s ease;
+    }
+    #input-screen.hidden { opacity: 0; pointer-events: none; }
+    #input-screen h1 {
+      font-size: 2.4rem; font-weight: 300;
+      color: #8aa8cc;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+    }
+    #input-screen .subtitle {
+      font-size: 0.85rem; font-weight: 300;
+      color: #4a5568;
+      margin-bottom: 2.5rem;
+      letter-spacing: 0.1em;
+    }
+    #input-form {
+      display: flex; flex-direction: column;
+      gap: 1rem; width: 320px;
+    }
+    #input-form input {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(120,150,200,0.15);
+      border-radius: 6px;
+      padding: 12px 16px;
+      color: #c0c8d8;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    #input-form input:focus {
+      border-color: rgba(120,160,220,0.4);
+    }
+    #input-form input::placeholder { color: #3a4258; }
+    #input-form button {
+      background: rgba(100,140,200,0.12);
+      border: 1px solid rgba(100,140,200,0.25);
+      border-radius: 6px;
+      padding: 12px;
+      color: #8aa8cc;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+      letter-spacing: 0.05em;
+    }
+    #input-form button:hover {
+      background: rgba(100,140,200,0.2);
+      border-color: rgba(100,140,200,0.4);
+    }
+    #input-form .hint {
+      font-size: 0.7rem; color: #3a4258;
+      text-align: center; margin-top: -0.5rem;
+    }
+
+    /* ========== LOADING SCREEN ========== */
+    #loading-screen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #050508;
+      z-index: 190;
+      transition: opacity 0.6s ease;
+    }
+    #loading-screen.hidden { opacity: 0; pointer-events: none; }
+    #loading-screen .loading-text {
+      font-size: 0.9rem; color: #5a6a80;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.08em;
+    }
+    #loading-screen .progress-bar-outer {
+      width: 280px; height: 3px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    #loading-screen .progress-bar-inner {
+      width: 0%; height: 100%;
+      background: linear-gradient(90deg, #4a6a8a, #8ab0dd);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+    #loading-screen .progress-detail {
+      font-size: 0.7rem; color: #3a4258;
+      margin-top: 0.8rem;
+    }
+
+    /* ========== ERROR TOAST ========== */
+    #error-toast {
+      position: fixed;
+      top: 20px; left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: rgba(180,60,60,0.15);
+      border: 1px solid rgba(200,80,80,0.3);
+      backdrop-filter: blur(10px);
+      padding: 14px 24px;
+      border-radius: 8px;
+      color: #d08888;
+      font-size: 0.85rem;
+      z-index: 300;
+      transition: transform 0.4s ease;
+      max-width: 400px;
+      text-align: center;
+    }
+    #error-toast.visible { transform: translateX(-50%) translateY(0); }
+
+    /* ========== SIDE PANEL ========== */
+    #side-panel {
+      position: fixed;
+      top: 0; right: 0;
+      width: 380px; height: 100%;
+      background: rgba(8, 10, 18, 0.88);
+      backdrop-filter: blur(16px);
+      border-left: 1px solid rgba(100,140,200,0.1);
+      padding: 32px 28px;
+      z-index: 150;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #side-panel.open { transform: translateX(0); }
+    #side-panel::-webkit-scrollbar { width: 4px; }
+    #side-panel::-webkit-scrollbar-track { background: transparent; }
+    #side-panel::-webkit-scrollbar-thumb { background: rgba(100,140,200,0.15); border-radius: 2px; }
+
+    #panel-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: none; border: none;
+      color: #5a6a80; font-size: 1.4rem;
+      cursor: pointer;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+    }
+    #panel-close:hover { color: #8aa8cc; background: rgba(255,255,255,0.05); }
+
+    #panel-repo-name {
+      font-size: 1.3rem; font-weight: 600;
+      color: #8ab0dd;
+      margin-bottom: 8px;
+      padding-right: 32px;
+    }
+    #panel-description {
+      font-size: 0.8rem; color: #5a6a80;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    #panel-stats {
+      display: flex; gap: 16px;
+      margin-bottom: 24px;
+      font-size: 0.8rem;
+    }
+    #panel-stats span {
+      color: #6a7a8a;
+      display: flex; align-items: center; gap: 4px;
+    }
+    #panel-stats .stat-value { color: #8aa8cc; font-weight: 500; }
+
+    .panel-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #4a5a6a;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+      margin-top: 6px;
+    }
+    #panel-branches {
+      margin-bottom: 24px;
+    }
+    .branch-item {
+      display: flex; justify-content: space-between;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      color: #6a7a90;
+      background: rgba(255,255,255,0.02);
+      border-radius: 4px;
+      margin-bottom: 3px;
+    }
+    .branch-item .branch-name { color: #7a9abb; }
+    .branch-item .branch-commits { color: #4a5a6a; font-size: 0.7rem; }
+
+    #panel-commits { margin-bottom: 20px; }
+    .commit-item {
+      padding: 8px 10px;
+      border-left: 2px solid rgba(100,140,200,0.15);
+      margin-bottom: 6px;
+      margin-left: 4px;
+    }
+    .commit-item .commit-msg {
+      font-size: 0.78rem;
+      color: #7a8a9a;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .commit-item .commit-date {
+      font-size: 0.65rem;
+      color: #3a4a5a;
+      margin-top: 3px;
+    }
+
+    .panel-loading {
+      font-size: 0.78rem;
+      color: #3a4a5a;
+      font-style: italic;
+      padding: 8px 0;
+    }
+
+    /* ========== REPO LABEL TOOLTIP ========== */
+    #repo-tooltip {
+      position: fixed;
+      padding: 6px 12px;
+      background: rgba(8, 10, 18, 0.9);
+      border: 1px solid rgba(100,140,200,0.15);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: #8aa8cc;
+      pointer-events: none;
+      z-index: 160;
+      opacity: 0;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    #repo-tooltip.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Input Screen -->
+  <div id="input-screen">
+    <h1>Shadesmar</h1>
+    <div class="subtitle">GitHub Repository Visualizer</div>
+    <form id="input-form" autocomplete="off">
+      <input type="text" id="username-input" placeholder="GitHub username" required>
+      <input type="text" id="token-input" placeholder="Personal Access Token (optional)">
+      <div class="hint">PAT increases API rate limit from 60 to 5,000 req/hour</div>
+      <button type="submit">Enter the Cognitive Realm</button>
+    </form>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="hidden">
+    <div class="loading-text" id="loading-text">Crossing into Shadesmar...</div>
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar"></div>
+    </div>
+    <div class="progress-detail" id="progress-detail"></div>
+  </div>
+
+  <!-- Error Toast -->
+  <div id="error-toast"></div>
+
+  <!-- Side Panel -->
+  <div id="side-panel">
+    <button id="panel-close">&times;</button>
+    <h2 id="panel-repo-name"></h2>
+    <p id="panel-description"></p>
+    <div id="panel-stats">
+      <span>&#9733; <span class="stat-value" id="panel-stars">0</span></span>
+      <span>&#9906; <span class="stat-value" id="panel-forks">0</span></span>
+      <span>&#128196; <span class="stat-value" id="panel-language">—</span></span>
+    </div>
+    <div class="panel-section-title">Branches</div>
+    <div id="panel-branches"><div class="panel-loading">Loading branches...</div></div>
+    <div class="panel-section-title">Recent Commits</div>
+    <div id="panel-commits"><div class="panel-loading">Loading commits...</div></div>
+  </div>
+
+  <!-- Repo Tooltip -->
+  <div id="repo-tooltip"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // ============================================================
+    // CONFIGURATION
+    // ============================================================
+    const CONFIG = {
+      island: { baseRadius: 18, height: 1.2, yPos: -0.5 },
+      beads: { count: 8000, innerRadius: 20, outerRadius: 55, waveSpeed: 0.4, waveAmp: 0.35 },
+      tree: { maxHeight: 14, minHeight: 1.5, trunkRadiusBase: 0.22, trunkRadiusTop: 0.1, branchMinCount: 2, branchMaxCount: 6 },
+      flame: { count: 0, baseOpacity: 0.25, highlightOpacity: 0.8, dimOpacity: 0.08, driftSpeed: 0.15 },
+      camera: { fov: 55, near: 0.1, far: 200, defaultRadius: 45, defaultPhi: 1.1, defaultTheta: 0, autoOrbitSpeed: 0.08, orbitDamping: 0.92 },
+      colors: {
+        orbBright: [0.55, 0.78, 1.0],
+        orbDim: [0.2, 0.35, 0.6],
+        flameDim: 0xcc6622,
+        flameHighlight: 0xff9944,
+        obsidian: 0x0a0a0e,
+        obsidianHighlight: 0x141420,
+        fog: 0x030305,
+        sun: 0xddeeff,
+        ambient: 0x111122,
+      }
+    };
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    const state = {
+      username: '',
+      token: '',
+      repos: [],
+      allContributors: new Map(),   // login -> { login, repos: Set<repoName> }
+      repoContributors: new Map(),  // repoName -> Set<login>
+      // Three.js objects (to be initialized later)
+      scene: null, camera: null, renderer: null, clock: null,
+      island: null,
+      beadPositions: null, beadSystem: null,
+      trees: [],
+      treeObjects: [],
+      flames: [],
+      // Camera
+      camTheta: 0, camPhi: 1.1, camRadius: 45,
+      camTarget: null,
+      autoOrbit: true,
+      isDragging: false, dragStartX: 0, dragStartY: 0,
+      dragVelX: 0, dragVelY: 0,
+      // Tween
+      cameraTween: null,
+      // Interaction
+      raycaster: null, mouse: null,
+      hoveredTree: null,
+      selectedTree: null,
+      panelOpen: false,
+      // Cache for lazy-loaded data
+      repoDetailCache: {},
+    };
+
+    // ============================================================
+    // GITHUB API
+    // ============================================================
+    async function apiFetch(url, token) {
+      const headers = { Accept: 'application/vnd.github.v3+json' };
+      if (token) headers.Authorization = `token ${token}`;
+      const res = await fetch(url, { headers });
+      if (res.status === 404) throw new Error('NOT_FOUND');
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        if (data.message && data.message.includes('rate limit')) throw new Error('RATE_LIMIT');
+        throw new Error('FORBIDDEN');
+      }
+      if (!res.ok) throw new Error(`HTTP_${res.status}`);
+      return res;
+    }
+
+    async function fetchRepos(username, token) {
+      const res = await apiFetch(
+        `https://api.github.com/users/${username}/repos?per_page=100&sort=updated`,
+        token
+      );
+      return res.json();
+    }
+
+    async function fetchContributors(owner, repo, token) {
+      try {
+        const res = await apiFetch(
+          `https://api.github.com/repos/${owner}/${repo}/contributors?per_page=30`,
+          token
+        );
+        return res.json();
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function fetchCommitCount(owner, repo, branch, token) {
+      try {
+        const res = await apiFetch(
+          `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&per_page=1`,
+          token
+        );
+        const linkHeader = res.headers.get('Link');
+        if (!linkHeader) return 1;
+        const match = linkHeader.match(/page=(\d+)>;\s*rel="last"/);
+        return match ? parseInt(match[1], 10) : 1;
+      } catch (e) {
+        return 0;
+      }
+    }
+
+    async function fetchBranches(owner, repo, token) {
+      try {
+        const res = await apiFetch(
+          `https://api.github.com/repos/${owner}/${repo}/branches?per_page=30`,
+          token
+        );
+        return res.json();
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function fetchRecentCommits(owner, repo, branch, token) {
+      try {
+        const res = await apiFetch(
+          `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&per_page=5`,
+          token
+        );
+        return res.json();
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function fetchAllData(username, token) {
+      // Step 1: Fetch repos
+      updateLoadingText('Fetching repositories...');
+      let repos;
+      try {
+        repos = await fetchRepos(username, token);
+      } catch (e) {
+        if (e.message === 'NOT_FOUND') throw new Error('User not found. Please check the username.');
+        if (e.message === 'RATE_LIMIT') throw new Error('API rate limit exceeded. Please provide a GitHub Personal Access Token.');
+        throw new Error('Failed to fetch repositories. Please try again.');
+      }
+
+      if (!repos || repos.length === 0) {
+        throw new Error('No public repositories found for this user.');
+      }
+
+      // Filter to non-fork public repos
+      repos = repos.filter(r => !r.fork);
+      updateLoadingText(`Found ${repos.length} repositories. Fetching details...`);
+
+      const totalCalls = repos.length * 2;
+      let completedCalls = 0;
+
+      const updateProgress = () => {
+        completedCalls++;
+        const pct = Math.round((completedCalls / totalCalls) * 100);
+        setProgressBar(pct);
+        updateProgressDetail(`${completedCalls} / ${totalCalls} API calls completed`);
+      };
+
+      // Step 2: Fetch contributors and commit counts in parallel per repo
+      const enrichedRepos = await Promise.all(repos.map(async (repo) => {
+        const [contributors, commitCount] = await Promise.all([
+          fetchContributors(username, repo.name, token).then(r => { updateProgress(); return r; }),
+          fetchCommitCount(username, repo.name, repo.default_branch || 'main', token).then(r => { updateProgress(); return r; }),
+        ]);
+
+        // Store contributor data
+        const logins = new Set();
+        (contributors || []).forEach(c => {
+          if (!c || !c.login) return;
+          logins.add(c.login);
+          if (!state.allContributors.has(c.login)) {
+            state.allContributors.set(c.login, { login: c.login, repos: new Set() });
+          }
+          state.allContributors.get(c.login).repos.add(repo.name);
+        });
+        state.repoContributors.set(repo.name, logins);
+
+        return {
+          name: repo.name,
+          fullName: repo.full_name,
+          description: repo.description || '',
+          stars: repo.stargazers_count || 0,
+          forks: repo.forks_count || 0,
+          language: repo.language || '—',
+          defaultBranch: repo.default_branch || 'main',
+          commitCount: commitCount || 0,
+          url: repo.html_url,
+        };
+      }));
+
+      return enrichedRepos;
+    }
+
+    // ============================================================
+    // UI CONTROLLERS
+    // ============================================================
+    function updateLoadingText(text) {
+      document.getElementById('loading-text').textContent = text;
+    }
+    function setProgressBar(pct) {
+      document.getElementById('progress-bar').style.width = pct + '%';
+    }
+    function updateProgressDetail(text) {
+      document.getElementById('progress-detail').textContent = text;
+    }
+    function showScreen(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+    function hideScreen(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+    function showError(msg) {
+      const el = document.getElementById('error-toast');
+      el.textContent = msg;
+      el.classList.add('visible');
+      setTimeout(() => el.classList.remove('visible'), 5000);
+    }
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ============================================================
+    // ENTRY POINT (scene building will be added in subsequent PRs)
+    // ============================================================
+    async function start(username, token) {
+      state.username = username;
+      state.token = token;
+
+      hideScreen('input-screen');
+      showScreen('loading-screen');
+      setProgressBar(0);
+
+      try {
+        const repos = await fetchAllData(username, token);
+        state.repos = repos;
+
+        updateLoadingText('Data loaded. Scene building coming soon...');
+        setProgressBar(100);
+        console.log('Fetched repos:', repos);
+        console.log('Contributors:', state.allContributors);
+      } catch (err) {
+        hideScreen('loading-screen');
+        showScreen('input-screen');
+        showError(err.message || 'An unexpected error occurred.');
+      }
+    }
+
+    // DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('input-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username-input').value.trim();
+        const token = document.getElementById('token-input').value.trim();
+        if (!username) return;
+        start(username, token);
+      });
+
+      document.getElementById('panel-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('side-panel').classList.remove('open');
+      });
+    });
+  </script>
+</body>
+</html>
