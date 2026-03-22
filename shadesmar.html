@@ -532,7 +532,224 @@
     }
 
     // ============================================================
-    // ENTRY POINT (scene building will be added in subsequent PRs)
+    // THREE.JS SCENE SETUP
+    // ============================================================
+    function initScene() {
+      state.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      state.renderer.setSize(window.innerWidth, window.innerHeight);
+      state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      state.renderer.setClearColor(CONFIG.colors.fog, 1);
+      document.body.appendChild(state.renderer.domElement);
+
+      state.scene = new THREE.Scene();
+      state.scene.fog = new THREE.FogExp2(CONFIG.colors.fog, 0.018);
+      state.scene.background = new THREE.Color(CONFIG.colors.fog);
+
+      state.camera = new THREE.PerspectiveCamera(
+        CONFIG.camera.fov,
+        window.innerWidth / window.innerHeight,
+        CONFIG.camera.near,
+        CONFIG.camera.far
+      );
+      state.camTarget = new THREE.Vector3(0, 2, 0);
+
+      // Dim sun near horizon
+      const sunLight = new THREE.DirectionalLight(CONFIG.colors.sun, 0.15);
+      sunLight.position.set(30, 4, -50);
+      state.scene.add(sunLight);
+
+      // Small sun sphere
+      const sunGeo = new THREE.SphereGeometry(0.8, 16, 16);
+      const sunMat = new THREE.MeshBasicMaterial({ color: 0xddeeff });
+      const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+      sunMesh.position.set(60, 6, -100);
+      state.scene.add(sunMesh);
+
+      // Very low ambient
+      const ambientLight = new THREE.AmbientLight(CONFIG.colors.ambient, 0.3);
+      state.scene.add(ambientLight);
+
+      // Subtle hemisphere light for fill
+      const hemiLight = new THREE.HemisphereLight(0x111122, 0x050508, 0.15);
+      state.scene.add(hemiLight);
+
+      state.clock = new THREE.Clock();
+      state.raycaster = new THREE.Raycaster();
+      state.mouse = new THREE.Vector2(-999, -999);
+
+      window.addEventListener('resize', () => {
+        state.camera.aspect = window.innerWidth / window.innerHeight;
+        state.camera.updateProjectionMatrix();
+        state.renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    // ============================================================
+    // ISLAND
+    // ============================================================
+    function createIsland(repoCount) {
+      const radius = Math.max(CONFIG.island.baseRadius, repoCount * 0.4 + 10);
+      CONFIG.island.currentRadius = radius;
+
+      const islandGeo = new THREE.CylinderGeometry(radius, radius * 1.1, CONFIG.island.height, 48, 1);
+      const islandMat = new THREE.MeshStandardMaterial({
+        color: CONFIG.colors.obsidian,
+        roughness: 0.5,
+        metalness: 0.6,
+      });
+      const island = new THREE.Mesh(islandGeo, islandMat);
+      island.position.y = CONFIG.island.yPos;
+      state.scene.add(island);
+
+      // Top surface
+      const surfaceGeo = new THREE.CylinderGeometry(radius * 0.98, radius * 0.98, 0.08, 48, 1);
+      const surfaceMat = new THREE.MeshStandardMaterial({
+        color: 0x0e0e14,
+        roughness: 0.7,
+        metalness: 0.4,
+      });
+      const surface = new THREE.Mesh(surfaceGeo, surfaceMat);
+      surface.position.y = CONFIG.island.yPos + CONFIG.island.height / 2;
+      state.scene.add(surface);
+
+      // Edge glow ring
+      const ringGeo = new THREE.TorusGeometry(radius, 0.08, 8, 64);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x1a2a3a,
+        transparent: true,
+        opacity: 0.3,
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = CONFIG.island.yPos + CONFIG.island.height / 2 + 0.05;
+      state.scene.add(ring);
+
+      state.island = island;
+      return radius;
+    }
+
+    // ============================================================
+    // BEAD SEA
+    // ============================================================
+    function createBeadSea(islandRadius) {
+      const count = CONFIG.beads.count;
+      const innerR = islandRadius + 1.5;
+      const outerR = CONFIG.beads.outerRadius;
+      const positions = new Float32Array(count * 3);
+      const basePositions = new Float32Array(count * 3);
+
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = innerR + Math.pow(Math.random(), 0.7) * (outerR - innerR);
+        const x = dist * Math.cos(angle);
+        const z = dist * Math.sin(angle);
+        const y = -0.8 + Math.random() * 0.2;
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+        basePositions[i * 3] = x;
+        basePositions[i * 3 + 1] = y;
+        basePositions[i * 3 + 2] = z;
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          pointSize: { value: 3.5 },
+          baseColor: { value: new THREE.Color(0x08080e) },
+          highlightColor: { value: new THREE.Color(0x141420) },
+        },
+        vertexShader: `
+          uniform float pointSize;
+          varying float vDist;
+          void main() {
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            vDist = length(position.xz) * 0.01;
+            gl_PointSize = pointSize * (250.0 / -mvPosition.z);
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 baseColor;
+          uniform vec3 highlightColor;
+          varying float vDist;
+          void main() {
+            float dist = length(gl_PointCoord - vec2(0.5));
+            if (dist > 0.5) discard;
+            float highlight = 1.0 - smoothstep(0.0, 0.3, dist);
+            vec3 color = mix(baseColor, highlightColor, highlight * 0.5);
+            float edge = smoothstep(0.45, 0.5, dist);
+            gl_FragColor = vec4(color, 1.0 - edge * 0.5);
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+      });
+
+      state.beadSystem = new THREE.Points(geometry, material);
+      state.beadPositions = basePositions;
+      state.scene.add(state.beadSystem);
+    }
+
+    function animateBeads(time) {
+      if (!state.beadSystem) return;
+      const posAttr = state.beadSystem.geometry.attributes.position;
+      const base = state.beadPositions;
+      const speed = CONFIG.beads.waveSpeed;
+      const amp = CONFIG.beads.waveAmp;
+
+      for (let i = 0; i < CONFIG.beads.count; i++) {
+        const bx = base[i * 3];
+        const bz = base[i * 3 + 2];
+        const by = base[i * 3 + 1];
+        posAttr.array[i * 3 + 1] = by + Math.sin(time * speed + bx * 0.06 + bz * 0.06) * amp
+          + Math.sin(time * speed * 0.7 + bx * 0.1 - bz * 0.04) * amp * 0.3;
+      }
+      posAttr.needsUpdate = true;
+    }
+
+    // ============================================================
+    // CAMERA (basic spherical positioning)
+    // ============================================================
+    function updateCameraFromSpherical() {
+      const { camTheta, camPhi, camRadius, camTarget } = state;
+      state.camera.position.x = camTarget.x + camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+      state.camera.position.y = camTarget.y + camRadius * Math.cos(camPhi);
+      state.camera.position.z = camTarget.z + camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+      state.camera.lookAt(camTarget);
+    }
+
+    // ============================================================
+    // ANIMATION LOOP
+    // ============================================================
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = state.clock.getDelta();
+      const time = state.clock.getElapsedTime();
+
+      // Auto orbit
+      if (state.autoOrbit) {
+        state.camTheta += CONFIG.camera.autoOrbitSpeed * delta;
+      }
+
+      updateCameraFromSpherical();
+      animateBeads(time);
+      state.renderer.render(state.scene, state.camera);
+    }
+
+    // ============================================================
+    // SCENE BUILDER
+    // ============================================================
+    function buildScene(repos) {
+      const islandRadius = createIsland(repos.length);
+      createBeadSea(islandRadius);
+      // Trees and flames will be added in subsequent PRs
+    }
+
+    // ============================================================
+    // ENTRY POINT
     // ============================================================
     async function start(username, token) {
       state.username = username;
@@ -546,10 +763,14 @@
         const repos = await fetchAllData(username, token);
         state.repos = repos;
 
-        updateLoadingText('Data loaded. Scene building coming soon...');
+        updateLoadingText('Building Shadesmar...');
         setProgressBar(100);
-        console.log('Fetched repos:', repos);
-        console.log('Contributors:', state.allContributors);
+
+        await new Promise(r => setTimeout(r, 400));
+
+        buildScene(repos);
+        hideScreen('loading-screen');
+        animate();
       } catch (err) {
         hideScreen('loading-screen');
         showScreen('input-screen');
@@ -559,6 +780,8 @@
 
     // DOM ready
     document.addEventListener('DOMContentLoaded', () => {
+      initScene();
+
       document.getElementById('input-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const username = document.getElementById('username-input').value.trim();
