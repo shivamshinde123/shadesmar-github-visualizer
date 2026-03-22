@@ -256,6 +256,205 @@
       white-space: nowrap;
     }
     #repo-tooltip.visible { opacity: 1; }
+
+    /* ========== CONTROLS PANEL ========== */
+    #controls-panel {
+      position: fixed;
+      bottom: 20px; left: 20px;
+      z-index: 160;
+      display: none;
+      background: rgba(8, 10, 18, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(100,140,200,0.1);
+      border-radius: 8px;
+      padding: 14px 18px;
+      min-width: 180px;
+    }
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .control-row:last-child { margin-bottom: 0; }
+    .control-row label {
+      font-size: 0.7rem;
+      color: #5a6a80;
+      min-width: 62px;
+    }
+    .control-row input[type="range"] {
+      flex: 1;
+      height: 3px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(100,140,200,0.15);
+      border-radius: 2px;
+      outline: none;
+    }
+    .control-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #5a7a9a;
+      cursor: pointer;
+    }
+    #controls-panel .slider-icon {
+      font-size: 0.7rem;
+      color: #5a6a80;
+      user-select: none;
+      line-height: 1;
+    }
+    #controls-panel .slider-icon.small { font-size: 0.55rem; }
+    #controls-panel .slider-icon.large { font-size: 0.85rem; }
+
+    /* ========== INPUT INFO & CREDIT ========== */
+    #input-screen .input-info {
+      margin-top: 2rem;
+      max-width: 380px;
+      width: 100%;
+    }
+    #input-screen .input-info-section {
+      margin-bottom: 1rem;
+    }
+    #input-screen .input-info h3 {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #4a6080;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 0.6rem 0;
+    }
+    #input-screen .input-info p {
+      font-size: 0.72rem;
+      color: #3a4a5a;
+      line-height: 1.7;
+      margin: 0;
+    }
+    #input-screen .input-info-grid {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 6px 8px;
+      align-items: center;
+      font-size: 0.72rem;
+      color: #4a5a6a;
+      line-height: 1.5;
+    }
+    #input-screen .info-icon {
+      font-size: 0.65rem;
+      text-align: center;
+    }
+    #input-screen .credit {
+      margin-top: 2.5rem;
+      font-size: 0.72rem;
+      color: #3a4258;
+      letter-spacing: 0.05em;
+    }
+    #input-screen .credit a {
+      color: #5a7a9a;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    #input-screen .credit a:hover {
+      color: #8aa8cc;
+      text-decoration: underline;
+    }
+
+    /* ========== INFO BUTTON & MODAL ========== */
+    #info-btn {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      z-index: 160;
+      display: none;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(80, 120, 180, 0.25);
+      backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(130, 170, 220, 0.4);
+      color: #a0c4e8;
+      font-size: 1.2rem;
+      font-family: 'Inter', serif;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+      line-height: 40px;
+      text-align: center;
+      padding: 0;
+    }
+    #info-btn:hover { background: rgba(100,140,200,0.4); color: #c0daf0; border-color: rgba(140,180,230,0.6); }
+
+    #info-modal {
+      position: fixed; inset: 0;
+      z-index: 300;
+      display: none;
+      align-items: center; justify-content: center;
+      background: rgba(2, 3, 6, 0.85);
+      backdrop-filter: blur(8px);
+    }
+    #info-modal.visible { display: flex; }
+    #info-modal .info-content {
+      background: rgba(10, 12, 22, 0.95);
+      border: 1px solid rgba(100,140,200,0.15);
+      border-radius: 12px;
+      padding: 32px 36px;
+      max-width: 520px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      color: #b0bcd0;
+      font-size: 0.82rem;
+      line-height: 1.7;
+    }
+    #info-modal .info-content h2 {
+      font-size: 1.3rem; font-weight: 300;
+      color: #8aa8cc;
+      letter-spacing: 0.1em;
+      margin: 0 0 0.5rem 0;
+    }
+    #info-modal .info-content h3 {
+      font-size: 0.85rem; font-weight: 600;
+      color: #6a8aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 1.4rem 0 0.5rem 0;
+    }
+    #info-modal .info-content p {
+      margin: 0 0 0.6rem 0;
+      color: #7a8a9a;
+    }
+    #info-modal .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0.5rem;
+    }
+    #info-modal .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    #info-modal .legend-bar {
+      width: 16px; height: 6px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    #info-modal .info-close {
+      margin-top: 1.5rem;
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background: rgba(100,140,200,0.1);
+      border: 1px solid rgba(100,140,200,0.2);
+      border-radius: 6px;
+      color: #8aa8cc;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #info-modal .info-close:hover { background: rgba(100,140,200,0.2); }
+    #info-modal .info-content::-webkit-scrollbar { width: 4px; }
+    #info-modal .info-content::-webkit-scrollbar-track { background: transparent; }
+    #info-modal .info-content::-webkit-scrollbar-thumb { background: rgba(100,140,200,0.2); border-radius: 2px; }
   </style>
 </head>
 <body>
@@ -270,6 +469,22 @@
       <div class="hint">PAT increases API rate limit from 60 to 5,000 req/hour</div>
       <button type="submit">Enter the Cognitive Realm</button>
     </form>
+    <div class="input-info">
+      <div class="input-info-section">
+        <h3>What You'll See</h3>
+        <div class="input-info-grid">
+          <span class="info-icon" style="color:#5a6a8a;">&#9670;</span><span>Crystal Trees: one per repository, height = commit count</span>
+          <span class="info-icon" style="color:#8ac4ff;">&#9679;</span><span>Glowing Orbs: commits along the trunk</span>
+          <span class="info-icon" style="color:#ff8833;">&#9632;</span><span>Flames: contributors floating on the bead sea</span>
+          <span class="info-icon" style="color:#2a2a3a;">&#9644;</span><span>Bead Sea: the infinite glass ocean of Shadesmar</span>
+        </div>
+      </div>
+      <div class="input-info-section">
+        <h3>Inspiration</h3>
+        <p>Inspired by Shadesmar from Brandon Sanderson's Stormlight Archive: a cognitive realm where ideas take physical form. Your repositories become crystal trees, collaborators become flames, and the bead sea stretches to infinity.</p>
+      </div>
+    </div>
+    <div class="credit">Built by <a href="https://github.com/shivamshinde123" target="_blank" rel="noopener">Shivam Shinde</a></div>
   </div>
 
   <!-- Loading Screen -->
@@ -300,6 +515,64 @@
     <div id="panel-commits"><div class="panel-loading">Loading commits...</div></div>
   </div>
 
+  <!-- Controls Panel -->
+  <div id="controls-panel">
+    <div class="control-row">
+      <label>Zoom</label>
+      <span class="slider-icon small" title="Zoom out">&minus;</span>
+      <input type="range" id="zoom-slider" min="12" max="80" value="45" step="1">
+      <span class="slider-icon large" title="Zoom in">+</span>
+    </div>
+    <div class="control-row">
+      <label>Brightness</label>
+      <span class="slider-icon small" title="Dim">&#9790;</span>
+      <input type="range" id="brightness-slider" min="20" max="200" value="100" step="5">
+      <span class="slider-icon large" title="Bright">&#9788;</span>
+    </div>
+  </div>
+
+  <button id="info-btn" title="About this visualization">i</button>
+
+  <div id="info-modal">
+    <div class="info-content">
+      <h2>Shadesmar</h2>
+      <p>A 3D visualization of GitHub repositories, inspired by the Cognitive Realm (Shadesmar) from Brandon Sanderson's Stormlight Archive.</p>
+
+      <h3>What Everything Represents</h3>
+      <div class="legend-item">
+        <span class="legend-bar" style="background: #3a3858;"></span>
+        <span>Crystal Trees: each tree is a repository. Taller trees have more commits.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot" style="background: #8ac4ff;"></span>
+        <span>Glowing Orbs: commit orbs along the trunk, brighter = more recent activity.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot" style="background: #ff8833;"></span>
+        <span>Flames: contributor flames floating on the bead sea. Each flame is a person who contributed to your repos.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-bar" style="background: #181822;"></span>
+        <span>Bead Sea: the ocean of glass beads surrounding the island, as described in the Stormlight Archive.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-bar" style="background: #0c0c14; border: 1px solid #2a2a3a;"></span>
+        <span>Obsidian Island: the dark landmass where your repositories grow.</span>
+      </div>
+
+      <h3>Interactions</h3>
+      <p>Click a tree to focus on it and see repo details in the side panel.</p>
+      <p>Click a contributor flame to highlight its linked tree in a warm amber glow.</p>
+      <p>Hover over trees or flames to see names.</p>
+      <p>Drag to orbit, scroll to zoom.</p>
+
+      <h3>Motivation</h3>
+      <p>In the Stormlight Archive, Shadesmar is a realm where every object in the physical world has a reflection: ideas become real, and significance gives things presence. This visualizer reimagines your GitHub profile as a Shadesmar island: your code becomes crystal trees, your collaborators become flames, and the bead sea stretches to infinity.</p>
+
+      <button class="info-close" id="info-close-btn">Close</button>
+    </div>
+  </div>
+
   <!-- Repo Tooltip -->
   <div id="repo-tooltip"></div>
 
@@ -312,13 +585,13 @@
       island: { baseRadius: 18, height: 1.2, yPos: -0.5 },
       beads: { count: 8000, innerRadius: 20, outerRadius: 55, waveSpeed: 0.4, waveAmp: 0.35 },
       tree: { maxHeight: 14, minHeight: 1.5, trunkRadiusBase: 0.22, trunkRadiusTop: 0.1, branchMinCount: 2, branchMaxCount: 6 },
-      flame: { count: 0, baseOpacity: 0.25, highlightOpacity: 0.8, dimOpacity: 0.08, driftSpeed: 0.15 },
+      flame: { count: 0, baseOpacity: 0.85, highlightOpacity: 1.0, dimOpacity: 0.3, driftSpeed: 0.15 },
       camera: { fov: 55, near: 0.1, far: 200, defaultRadius: 45, defaultPhi: 1.1, defaultTheta: 0, autoOrbitSpeed: 0.08, orbitDamping: 0.92 },
       colors: {
         orbBright: [0.55, 0.78, 1.0],
         orbDim: [0.2, 0.35, 0.6],
-        flameDim: 0xcc6622,
-        flameHighlight: 0xff9944,
+        flameDim: 0xff8833,
+        flameHighlight: 0xffcc66,
         obsidian: 0x0a0a0e,
         obsidianHighlight: 0x141420,
         fog: 0x030305,
@@ -354,6 +627,7 @@
       // Interaction
       raycaster: null, mouse: null,
       hoveredTree: null,
+      hoveredFlame: null,
       selectedTree: null,
       panelOpen: false,
       // Cache for lazy-loaded data
@@ -554,16 +828,16 @@
       state.camTarget = new THREE.Vector3(0, 2, 0);
 
       // Dim sun near horizon
-      const sunLight = new THREE.DirectionalLight(CONFIG.colors.sun, 0.15);
-      sunLight.position.set(30, 4, -50);
-      state.scene.add(sunLight);
+      state.sunLight = new THREE.DirectionalLight(CONFIG.colors.sun, 0.15);
+      state.sunLight.position.set(30, 4, -50);
+      state.scene.add(state.sunLight);
 
       // Small sun sphere
       const sunGeo = new THREE.SphereGeometry(0.8, 16, 16);
       const sunMat = new THREE.MeshBasicMaterial({ color: 0xddeeff });
-      const sunMesh = new THREE.Mesh(sunGeo, sunMat);
-      sunMesh.position.set(60, 6, -100);
-      state.scene.add(sunMesh);
+      state.sunMesh = new THREE.Mesh(sunGeo, sunMat);
+      state.sunMesh.position.set(60, 6, -100);
+      state.scene.add(state.sunMesh);
 
       // Very low ambient
       const ambientLight = new THREE.AmbientLight(CONFIG.colors.ambient, 0.3);
@@ -725,6 +999,13 @@
       emissive: 0x0d1520,
       emissiveIntensity: 0.6,
     });
+    const flameFocusMat = new THREE.MeshStandardMaterial({
+      color: 0x8a6030,
+      roughness: 0.2,
+      metalness: 0.8,
+      emissive: 0x664420,
+      emissiveIntensity: 1.2,
+    });
 
     function createTree(repoData) {
       const group = new THREE.Group();
@@ -867,10 +1148,11 @@
       });
     }
 
-    function highlightTree(treeGroup) {
+    function highlightTree(treeGroup, material) {
+      const mat = material || obsidianHighlightMat;
       treeGroup.traverse(child => {
         if (child.isMesh && child.userData.isTreePart) {
-          child.material = obsidianHighlightMat;
+          child.material = mat;
         }
       });
     }
@@ -893,19 +1175,20 @@
       const ctx = canvas.getContext('2d');
 
       const gradient = ctx.createRadialGradient(32, 40, 2, 32, 32, 28);
-      gradient.addColorStop(0, 'rgba(255, 200, 100, 1)');
-      gradient.addColorStop(0.3, 'rgba(255, 140, 50, 0.8)');
-      gradient.addColorStop(0.6, 'rgba(200, 80, 20, 0.4)');
-      gradient.addColorStop(1, 'rgba(100, 30, 10, 0)');
+      gradient.addColorStop(0, 'rgba(255, 230, 140, 1)');
+      gradient.addColorStop(0.25, 'rgba(255, 180, 70, 0.9)');
+      gradient.addColorStop(0.5, 'rgba(255, 120, 40, 0.6)');
+      gradient.addColorStop(0.75, 'rgba(200, 80, 20, 0.3)');
+      gradient.addColorStop(1, 'rgba(120, 40, 10, 0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.ellipse(32, 36, 16, 24, 0, 0, Math.PI * 2);
+      ctx.ellipse(32, 36, 18, 26, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      const core = ctx.createRadialGradient(32, 42, 1, 32, 38, 10);
-      core.addColorStop(0, 'rgba(255, 255, 200, 1)');
-      core.addColorStop(0.5, 'rgba(255, 180, 80, 0.5)');
-      core.addColorStop(1, 'rgba(255, 100, 30, 0)');
+      const core = ctx.createRadialGradient(32, 42, 1, 32, 38, 12);
+      core.addColorStop(0, 'rgba(255, 255, 230, 1)');
+      core.addColorStop(0.4, 'rgba(255, 220, 120, 0.7)');
+      core.addColorStop(1, 'rgba(255, 140, 50, 0)');
       ctx.fillStyle = core;
       ctx.beginPath();
       ctx.ellipse(32, 40, 8, 14, 0, 0, Math.PI * 2);
@@ -929,13 +1212,13 @@
         const sprite = new THREE.Sprite(spriteMat);
 
         const angle = Math.random() * Math.PI * 2;
-        const dist = islandRadius + 3 + Math.random() * 20;
+        const dist = islandRadius + 2 + Math.random() * 6;
         sprite.position.set(
           dist * Math.cos(angle),
           -0.2 + Math.random() * 0.5,
           dist * Math.sin(angle)
         );
-        sprite.scale.set(0.6, 1.0, 1);
+        sprite.scale.set(2.0, 3.2, 1);
 
         sprite.userData = {
           login,
@@ -963,15 +1246,15 @@
         if (ud.highlighted) {
           flame.material.opacity = CONFIG.flame.highlightOpacity * flicker * flicker2;
           flame.material.color.setHex(CONFIG.colors.flameHighlight);
-          flame.scale.set(0.8, 1.3 * flicker2, 1);
+          flame.scale.set(2.8, 4.5 * flicker2, 1);
         } else if (state.hoveredTree) {
           flame.material.opacity = CONFIG.flame.dimOpacity * flicker;
           flame.material.color.setHex(CONFIG.colors.flameDim);
-          flame.scale.set(0.4, 0.7 * flicker2, 1);
+          flame.scale.set(1.5, 2.4 * flicker2, 1);
         } else {
           flame.material.opacity = ud.baseOpacity * flicker * flicker2;
           flame.material.color.setHex(CONFIG.colors.flameDim);
-          flame.scale.set(0.5, 0.9 * flicker2, 1);
+          flame.scale.set(2.0, 3.2 * flicker2, 1);
         }
 
         // Drift
@@ -1039,7 +1322,7 @@
           const dx = e.clientX - prevX;
           const dy = e.clientY - prevY;
           state.camTheta -= dx * 0.005;
-          state.camPhi = THREE.MathUtils.clamp(state.camPhi - dy * 0.005, 0.2, Math.PI - 0.2);
+          state.camPhi = THREE.MathUtils.clamp(state.camPhi - dy * 0.005, 0.85, 1.5);
           state.dragVelX = dx * 0.005;
           state.dragVelY = dy * 0.005;
           prevX = e.clientX;
@@ -1061,6 +1344,8 @@
         state.camRadius = THREE.MathUtils.clamp(
           state.camRadius + e.deltaY * 0.04, 12, 80
         );
+        const zs = document.getElementById('zoom-slider');
+        if (zs) zs.value = 92 - state.camRadius;
       }, { passive: false });
 
       // Touch support
@@ -1084,7 +1369,7 @@
           const dx = e.touches[0].clientX - touchStartX;
           const dy = e.touches[0].clientY - touchStartY;
           state.camTheta -= dx * 0.005;
-          state.camPhi = THREE.MathUtils.clamp(state.camPhi - dy * 0.005, 0.2, Math.PI - 0.2);
+          state.camPhi = THREE.MathUtils.clamp(state.camPhi - dy * 0.005, 0.85, 1.5);
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
         } else if (e.touches.length === 2) {
@@ -1105,6 +1390,32 @@
           if (!state.panelOpen) state.autoOrbit = true;
         }, 4000);
       });
+    }
+
+    function focusTree(treeGroup, fromFlame) {
+      const repo = treeGroup.userData.repo;
+      const treePos = treeGroup.position.clone();
+      const trunkH = treeGroup.userData.trunkHeight;
+      const dir = treePos.clone().normalize();
+
+      if (fromFlame) {
+        const camOffset = dir.clone().multiplyScalar(-6);
+        camOffset.y = trunkH * 0.6 + 2;
+        camOffset.x += (dir.z > 0 ? -3 : 3);
+        const lookAt = treePos.clone().add(new THREE.Vector3(0, trunkH * 0.4, 0));
+        tweenCameraTo(treePos.clone().add(camOffset), lookAt, 1.3);
+      } else {
+        const camOffset = dir.clone().multiplyScalar(12);
+        camOffset.y = trunkH * 0.5 + 3;
+        camOffset.x += (dir.z > 0 ? 3 : -3);
+        const lookAt = treePos.clone().add(dir.clone().multiplyScalar(15));
+        lookAt.y = trunkH * 0.3;
+        tweenCameraTo(treePos.clone().add(camOffset), lookAt, 1.3);
+      }
+
+      highlightTree(treeGroup, fromFlame ? flameFocusMat : obsidianHighlightMat);
+      highlightFlamesForRepo(repo.name);
+      openPanel(repo);
     }
 
     function tweenCameraTo(targetPos, targetLookAt, duration) {
@@ -1169,17 +1480,28 @@
           const hit = intersects[0].object;
           const treeGroup = hit.userData.treeGroup;
           if (treeGroup && treeGroup.userData.isTree) {
-            const repo = treeGroup.userData.repo;
-            const treePos = treeGroup.position.clone();
-            const lookAt = treePos.clone().add(new THREE.Vector3(0, treeGroup.userData.trunkHeight * 0.4, 0));
-            const dir = treePos.clone().normalize();
-            const camOffset = dir.clone().multiplyScalar(-6);
-            camOffset.y = treeGroup.userData.trunkHeight * 0.6 + 2;
-            camOffset.x += (dir.z > 0 ? -3 : 3);
-            tweenCameraTo(treePos.clone().add(camOffset), lookAt, 1.3);
-            openPanel(repo);
+            focusTree(treeGroup);
+            return;
           }
-        } else if (state.panelOpen) {
+        }
+
+        // Check flames
+        const flameHits = state.raycaster.intersectObjects(state.flames);
+        if (flameHits.length > 0) {
+          const flame = flameHits[0].object;
+          const login = flame.userData.login;
+          const contributorRepos = flame.userData.repos;
+          if (contributorRepos && contributorRepos.size > 0) {
+            const repoName = contributorRepos.values().next().value;
+            const treeEntry = state.trees.find(t => t.repo.name === repoName);
+            if (treeEntry) {
+              focusTree(treeEntry.group, true);
+              return;
+            }
+          }
+        }
+
+        if (state.panelOpen) {
           closePanel();
         }
       });
@@ -1198,6 +1520,7 @@
           if (state.hoveredTree !== treeGroup) {
             if (state.hoveredTree) { unhighlightTree(state.hoveredTree); resetFlames(); }
             state.hoveredTree = treeGroup;
+            state.hoveredFlame = null;
             highlightTree(treeGroup);
             highlightFlamesForRepo(treeGroup.userData.repo.name);
             tooltip.textContent = treeGroup.userData.repo.name;
@@ -1206,6 +1529,27 @@
           state.renderer.domElement.style.cursor = 'pointer';
           return;
         }
+      }
+
+      // Check flame hover
+      const flameHits = state.raycaster.intersectObjects(state.flames);
+      if (flameHits.length > 0) {
+        const flame = flameHits[0].object;
+        if (state.hoveredFlame !== flame) {
+          if (state.hoveredTree) { unhighlightTree(state.hoveredTree); state.hoveredTree = null; }
+          resetFlames();
+          state.hoveredFlame = flame;
+          flame.userData.highlighted = true;
+          tooltip.textContent = flame.userData.login;
+          tooltip.classList.add('visible');
+        }
+        state.renderer.domElement.style.cursor = 'pointer';
+        return;
+      }
+
+      if (state.hoveredFlame) {
+        resetFlames();
+        state.hoveredFlame = null;
       }
 
       if (state.hoveredTree) {
@@ -1314,7 +1658,7 @@
       if (!state.isDragging) {
         state.camTheta -= state.dragVelX * 0.3;
         state.camPhi = THREE.MathUtils.clamp(
-          state.camPhi + state.dragVelY * 0.3, 0.2, Math.PI - 0.2
+          state.camPhi + state.dragVelY * 0.3, 0.85, 1.5
         );
         state.dragVelX *= CONFIG.camera.orbitDamping;
         state.dragVelY *= CONFIG.camera.orbitDamping;
@@ -1327,6 +1671,21 @@
         updateCameraTween(delta);
       } else {
         updateCameraFromSpherical();
+      }
+
+      // Dynamic sun positioning
+      {
+        const camPos = state.camera.position;
+        const lookDir = new THREE.Vector3().subVectors(state.camTarget, camPos).normalize();
+        const right = new THREE.Vector3().crossVectors(lookDir, new THREE.Vector3(0, 1, 0)).normalize();
+        const viewUp = new THREE.Vector3().crossVectors(right, lookDir).normalize();
+        const sunWorldPos = new THREE.Vector3()
+          .copy(camPos)
+          .addScaledVector(lookDir, 100)
+          .addScaledVector(right, 30)
+          .addScaledVector(viewUp, 45);
+        state.sunMesh.position.copy(sunWorldPos);
+        state.sunLight.position.copy(sunWorldPos);
       }
 
       animateBeads(time);
@@ -1367,6 +1726,8 @@
 
         buildScene(repos);
         hideScreen('loading-screen');
+        document.getElementById('controls-panel').style.display = 'block';
+        document.getElementById('info-btn').style.display = 'block';
         animate();
       } catch (err) {
         hideScreen('loading-screen');
@@ -1392,6 +1753,32 @@
       document.getElementById('panel-close').addEventListener('click', (e) => {
         e.stopPropagation();
         closePanel();
+      });
+
+      // Zoom slider
+      const zoomSlider = document.getElementById('zoom-slider');
+      zoomSlider.addEventListener('input', (e) => {
+        state.camRadius = 92 - parseFloat(e.target.value);
+      });
+
+      // Brightness slider
+      const brightnessSlider = document.getElementById('brightness-slider');
+      brightnessSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value) / 100;
+        state.renderer.domElement.style.filter = `brightness(${val})`;
+      });
+
+      // Info modal
+      document.getElementById('info-btn').addEventListener('click', () => {
+        document.getElementById('info-modal').classList.add('visible');
+      });
+      document.getElementById('info-close-btn').addEventListener('click', () => {
+        document.getElementById('info-modal').classList.remove('visible');
+      });
+      document.getElementById('info-modal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+          e.currentTarget.classList.remove('visible');
+        }
       });
     });
   </script>
