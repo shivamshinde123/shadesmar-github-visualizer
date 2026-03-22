@@ -583,17 +583,17 @@
     // ============================================================
     const CONFIG = {
       island: { baseRadius: 18, height: 1.2, yPos: -0.5 },
-      beads: { count: 8000, innerRadius: 20, outerRadius: 55, waveSpeed: 0.4, waveAmp: 0.35 },
+      beads: { count: 20000, innerRadius: 20, outerRadius: 160, waveSpeed: 0.8, waveAmp: 0.6 },
       tree: { maxHeight: 14, minHeight: 1.5, trunkRadiusBase: 0.22, trunkRadiusTop: 0.1, branchMinCount: 2, branchMaxCount: 6 },
       flame: { count: 0, baseOpacity: 0.85, highlightOpacity: 1.0, dimOpacity: 0.3, driftSpeed: 0.15 },
-      camera: { fov: 55, near: 0.1, far: 200, defaultRadius: 45, defaultPhi: 1.1, defaultTheta: 0, autoOrbitSpeed: 0.08, orbitDamping: 0.92 },
+      camera: { fov: 65, near: 0.1, far: 300, defaultRadius: 45, defaultPhi: 1.35, defaultTheta: 0, autoOrbitSpeed: 0.08, orbitDamping: 0.92 },
       colors: {
         orbBright: [0.55, 0.78, 1.0],
         orbDim: [0.2, 0.35, 0.6],
         flameDim: 0xff8833,
         flameHighlight: 0xffcc66,
-        obsidian: 0x0a0a0e,
-        obsidianHighlight: 0x141420,
+        obsidian: 0x3a3858,
+        obsidianHighlight: 0x5a5880,
         fog: 0x030305,
         sun: 0xddeeff,
         ambient: 0x111122,
@@ -639,8 +639,16 @@
     // ============================================================
     async function apiFetch(url, token) {
       const headers = { Accept: 'application/vnd.github.v3+json' };
-      if (token) headers.Authorization = `token ${token}`;
+      if (token) {
+        if (token.startsWith('github_pat_')) {
+          headers.Authorization = `Bearer ${token}`;
+        } else {
+          headers.Authorization = `token ${token}`;
+        }
+      }
       const res = await fetch(url, { headers });
+      if (res.status === 204) return null;
+      if (res.status === 401) throw new Error('Invalid token');
       if (res.status === 404) throw new Error('NOT_FOUND');
       if (res.status === 403) {
         const data = await res.json().catch(() => ({}));
@@ -656,7 +664,8 @@
         `https://api.github.com/users/${username}/repos?per_page=100&sort=updated`,
         token
       );
-      return res.json();
+      if (!res) return [];
+      return await res.json();
     }
 
     async function fetchContributors(owner, repo, token) {
@@ -665,7 +674,8 @@
           `https://api.github.com/repos/${owner}/${repo}/contributors?per_page=30`,
           token
         );
-        return res.json();
+        if (!res) return [];
+        return await res.json();
       } catch (e) {
         return [];
       }
@@ -677,6 +687,7 @@
           `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&per_page=1`,
           token
         );
+        if (!res) return 0;
         const linkHeader = res.headers.get('Link');
         if (!linkHeader) return 1;
         const match = linkHeader.match(/page=(\d+)>;\s*rel="last"/);
@@ -692,7 +703,8 @@
           `https://api.github.com/repos/${owner}/${repo}/branches?per_page=30`,
           token
         );
-        return res.json();
+        if (!res) return [];
+        return await res.json();
       } catch (e) {
         return [];
       }
@@ -704,7 +716,8 @@
           `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&per_page=5`,
           token
         );
-        return res.json();
+        if (!res) return [];
+        return await res.json();
       } catch (e) {
         return [];
       }
@@ -813,10 +826,12 @@
       state.renderer.setSize(window.innerWidth, window.innerHeight);
       state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       state.renderer.setClearColor(CONFIG.colors.fog, 1);
+      state.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      state.renderer.toneMappingExposure = 1.0;
       document.body.appendChild(state.renderer.domElement);
 
       state.scene = new THREE.Scene();
-      state.scene.fog = new THREE.FogExp2(CONFIG.colors.fog, 0.018);
+      state.scene.fog = new THREE.Fog(CONFIG.colors.fog, 60, 220);
       state.scene.background = new THREE.Color(CONFIG.colors.fog);
 
       state.camera = new THREE.PerspectiveCamera(
@@ -827,24 +842,47 @@
       );
       state.camTarget = new THREE.Vector3(0, 2, 0);
 
-      // Dim sun near horizon
-      state.sunLight = new THREE.DirectionalLight(CONFIG.colors.sun, 0.15);
-      state.sunLight.position.set(30, 4, -50);
+      // Sun group - moves with camera so sun is always visible in the sky
+      state.sunGroup = new THREE.Group();
+      state.scene.add(state.sunGroup);
+
+      // Directional light shining down from sun direction
+      state.sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
       state.scene.add(state.sunLight);
 
-      // Small sun sphere
-      const sunGeo = new THREE.SphereGeometry(0.8, 16, 16);
-      const sunMat = new THREE.MeshBasicMaterial({ color: 0xddeeff });
-      state.sunMesh = new THREE.Mesh(sunGeo, sunMat);
-      state.sunMesh.position.set(60, 6, -100);
-      state.scene.add(state.sunMesh);
+      // Fill light
+      const fillLight = new THREE.DirectionalLight(0x667788, 0.15);
+      fillLight.position.set(0, 20, 0);
+      state.scene.add(fillLight);
 
-      // Very low ambient
-      const ambientLight = new THREE.AmbientLight(CONFIG.colors.ambient, 0.3);
+      // Sun sphere
+      const sunGeo = new THREE.SphereGeometry(6, 32, 32);
+      const sunMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
+      state.sunMesh = new THREE.Mesh(sunGeo, sunMat);
+      state.sunGroup.add(state.sunMesh);
+
+      // Inner glow
+      const sunGlowGeo = new THREE.SphereGeometry(11, 32, 32);
+      const sunGlowMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0.18, fog: false,
+      });
+      const sunGlow = new THREE.Mesh(sunGlowGeo, sunGlowMat);
+      state.sunGroup.add(sunGlow);
+
+      // Outer glow
+      const sunGlow2Geo = new THREE.SphereGeometry(18, 32, 32);
+      const sunGlow2Mat = new THREE.MeshBasicMaterial({
+        color: 0xeeeeff, transparent: true, opacity: 0.07, fog: false,
+      });
+      const sunGlow2 = new THREE.Mesh(sunGlow2Geo, sunGlow2Mat);
+      state.sunGroup.add(sunGlow2);
+
+      // Ambient light
+      const ambientLight = new THREE.AmbientLight(0x334455, 0.3);
       state.scene.add(ambientLight);
 
-      // Subtle hemisphere light for fill
-      const hemiLight = new THREE.HemisphereLight(0x111122, 0x050508, 0.15);
+      // Hemisphere light for fill
+      const hemiLight = new THREE.HemisphereLight(0x556677, 0x050508, 0.2);
       state.scene.add(hemiLight);
 
       state.clock = new THREE.Clock();
@@ -864,41 +902,88 @@
     function createIsland(repoCount) {
       const radius = Math.max(CONFIG.island.baseRadius, repoCount * 0.4 + 10);
       CONFIG.island.currentRadius = radius;
+      const islandGroup = new THREE.Group();
+      islandGroup.position.y = CONFIG.island.yPos;
 
-      const islandGeo = new THREE.CylinderGeometry(radius, radius * 1.1, CONFIG.island.height, 48, 1);
-      const islandMat = new THREE.MeshStandardMaterial({
-        color: CONFIG.colors.obsidian,
-        roughness: 0.5,
-        metalness: 0.6,
-      });
-      const island = new THREE.Mesh(islandGeo, islandMat);
-      island.position.y = CONFIG.island.yPos;
-      state.scene.add(island);
+      // Noise helper
+      function fract(n) { return n - Math.floor(n); }
+      function hash(p) { return fract(Math.sin(p.x * 127.1 + p.y * 311.7) * 43758.5453); }
+      function noise2D(x, y) {
+        const ix = Math.floor(x), iy = Math.floor(y);
+        const fx = x - ix, fy = y - iy;
+        const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+        const a = hash({x: ix, y: iy}), b = hash({x: ix+1, y: iy});
+        const c = hash({x: ix, y: iy+1}), d = hash({x: ix+1, y: iy+1});
+        return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
+      }
 
-      // Top surface
-      const surfaceGeo = new THREE.CylinderGeometry(radius * 0.98, radius * 0.98, 0.08, 48, 1);
-      const surfaceMat = new THREE.MeshStandardMaterial({
-        color: 0x0e0e14,
-        roughness: 0.7,
-        metalness: 0.4,
+      function terrainHeight(x, z, r) {
+        const dist = Math.sqrt(x * x + z * z) / r;
+        const edgeFalloff = Math.max(0, 1 - Math.pow(dist, 2.5));
+        const n1 = noise2D(x * 0.15, z * 0.15) * 2.0;
+        const n2 = noise2D(x * 0.3 + 100, z * 0.3 + 100) * 0.8;
+        const n3 = noise2D(x * 0.6 + 200, z * 0.6 + 200) * 0.3;
+        return (n1 + n2 + n3) * edgeFalloff * 0.8;
+      }
+
+      // Store for tree placement
+      state.terrainHeightFn = (x, z) => terrainHeight(x, z, radius);
+
+      // Terrain mesh
+      const segments = 80;
+      const terrainGeo = new THREE.PlaneGeometry(radius * 2.2, radius * 2.2, segments, segments);
+      terrainGeo.rotateX(-Math.PI / 2);
+      const posAttr = terrainGeo.attributes.position;
+
+      const vertexInside = [];
+      for (let i = 0; i < posAttr.count; i++) {
+        const x = posAttr.getX(i), z = posAttr.getZ(i);
+        const dist = Math.sqrt(x * x + z * z);
+        vertexInside.push(dist <= radius * 1.02);
+        if (dist <= radius * 1.02) {
+          posAttr.setY(i, terrainHeight(x, z, radius));
+        } else {
+          posAttr.setY(i, -10);
+        }
+      }
+
+      // Remove triangles outside the island radius
+      const oldIndex = terrainGeo.index;
+      const newIndices = [];
+      for (let i = 0; i < oldIndex.count; i += 3) {
+        const a = oldIndex.getX(i), b = oldIndex.getX(i+1), c = oldIndex.getX(i+2);
+        if (vertexInside[a] && vertexInside[b] && vertexInside[c]) {
+          newIndices.push(a, b, c);
+        }
+      }
+      terrainGeo.setIndex(newIndices);
+      terrainGeo.computeVertexNormals();
+
+      const terrainMat = new THREE.MeshStandardMaterial({
+        color: 0x0c0c14,
+        roughness: 0.85,
+        metalness: 0.2,
+        emissive: 0x030308,
+        emissiveIntensity: 0.15,
+        flatShading: true,
       });
-      const surface = new THREE.Mesh(surfaceGeo, surfaceMat);
-      surface.position.y = CONFIG.island.yPos + CONFIG.island.height / 2;
-      state.scene.add(surface);
+      const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+      islandGroup.add(terrain);
 
       // Edge glow ring
-      const ringGeo = new THREE.TorusGeometry(radius, 0.08, 8, 64);
+      const ringGeo = new THREE.TorusGeometry(radius, 0.15, 8, 64);
+      ringGeo.rotateX(Math.PI / 2);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x1a2a3a,
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.25,
       });
       const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.rotation.x = Math.PI / 2;
-      ring.position.y = CONFIG.island.yPos + CONFIG.island.height / 2 + 0.05;
-      state.scene.add(ring);
+      ring.position.y = 0;
+      islandGroup.add(ring);
 
-      state.island = island;
+      state.scene.add(islandGroup);
+      state.island = islandGroup;
       return radius;
     }
 
@@ -931,9 +1016,9 @@
 
       const material = new THREE.ShaderMaterial({
         uniforms: {
-          pointSize: { value: 3.5 },
-          baseColor: { value: new THREE.Color(0x08080e) },
-          highlightColor: { value: new THREE.Color(0x141420) },
+          pointSize: { value: 2.5 },
+          baseColor: { value: new THREE.Color(0x181822) },
+          highlightColor: { value: new THREE.Color(0x2a2a3a) },
         },
         vertexShader: `
           uniform float pointSize;
@@ -976,10 +1061,26 @@
 
       for (let i = 0; i < CONFIG.beads.count; i++) {
         const bx = base[i * 3];
-        const bz = base[i * 3 + 2];
         const by = base[i * 3 + 1];
-        posAttr.array[i * 3 + 1] = by + Math.sin(time * speed + bx * 0.06 + bz * 0.06) * amp
-          + Math.sin(time * speed * 0.7 + bx * 0.1 - bz * 0.04) * amp * 0.3;
+        const bz = base[i * 3 + 2];
+
+        // Primary rolling wave
+        const wave1 = Math.sin(time * speed + bx * 0.08 + bz * 0.05) * amp;
+        // Cross wave for choppiness
+        const wave2 = Math.sin(time * speed * 1.3 - bz * 0.1 + bx * 0.03) * amp * 0.4;
+        // Slow deep swell
+        const wave3 = Math.sin(time * speed * 0.4 + bx * 0.02 + bz * 0.02) * amp * 0.6;
+        // Small ripples
+        const ripple = Math.sin(time * speed * 2.5 + bx * 0.2 + bz * 0.15) * amp * 0.1;
+
+        // Y: vertical wave motion
+        posAttr.array[i * 3 + 1] = by + wave1 + wave2 + wave3 + ripple;
+
+        // X: subtle horizontal sway
+        posAttr.array[i * 3] = bx + Math.sin(time * speed * 0.6 + bz * 0.07) * amp * 0.15;
+
+        // Z: subtle forward-back drift
+        posAttr.array[i * 3 + 2] = bz + Math.cos(time * speed * 0.5 + bx * 0.06) * amp * 0.12;
       }
       posAttr.needsUpdate = true;
     }
@@ -989,15 +1090,17 @@
     // ============================================================
     const obsidianMat = new THREE.MeshStandardMaterial({
       color: CONFIG.colors.obsidian,
-      roughness: 0.4,
+      roughness: 0.3,
       metalness: 0.7,
+      emissive: 0x1c1835,
+      emissiveIntensity: 0.7,
     });
     const obsidianHighlightMat = new THREE.MeshStandardMaterial({
       color: CONFIG.colors.obsidianHighlight,
-      roughness: 0.3,
+      roughness: 0.2,
       metalness: 0.8,
-      emissive: 0x0d1520,
-      emissiveIntensity: 0.6,
+      emissive: 0x282448,
+      emissiveIntensity: 1.0,
     });
     const flameFocusMat = new THREE.MeshStandardMaterial({
       color: 0x8a6030,
@@ -1135,8 +1238,9 @@
         const angle = i * 2.399 + (Math.random() - 0.5) * 0.3; // golden angle
         const x = ringRadius * Math.cos(angle) + (Math.random() - 0.5) * 1.5;
         const z = ringRadius * Math.sin(angle) + (Math.random() - 0.5) * 1.5;
+        const treeY = state.terrainHeightFn ? state.terrainHeightFn(x, z) : CONFIG.island.yPos;
 
-        tree.position.set(x, CONFIG.island.yPos + CONFIG.island.height / 2 + 0.04, z);
+        tree.position.set(x, treeY, z);
         state.scene.add(tree);
         state.trees.push({ group: tree, repo });
 
@@ -1673,8 +1777,8 @@
         updateCameraFromSpherical();
       }
 
-      // Dynamic sun positioning
-      {
+      // Position sun in front of camera, upper-right of view, always visible
+      if (state.sunGroup) {
         const camPos = state.camera.position;
         const lookDir = new THREE.Vector3().subVectors(state.camTarget, camPos).normalize();
         const right = new THREE.Vector3().crossVectors(lookDir, new THREE.Vector3(0, 1, 0)).normalize();
@@ -1684,7 +1788,7 @@
           .addScaledVector(lookDir, 100)
           .addScaledVector(right, 30)
           .addScaledVector(viewUp, 45);
-        state.sunMesh.position.copy(sunWorldPos);
+        state.sunGroup.position.copy(sunWorldPos);
         state.sunLight.position.copy(sunWorldPos);
       }
 
