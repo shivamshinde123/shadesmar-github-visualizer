@@ -4,6 +4,10 @@ A single self-contained HTML file that visualizes a GitHub user's repositories a
 
 Inspired by Shadesmar from Brandon Sanderson's Stormlight Archive — a dark obsidian island floating in a sea of glass beads, with crystalline trees representing repositories and flickering flames representing contributors.
 
+## Detailed Documentation
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/shivamshinde123/shadesmar-github-visualizer)
+
 ## Features
 
 ### Visual Elements
